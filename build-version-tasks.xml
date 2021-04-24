@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE project>
+<project name="version-tasks">
+
+	<!--
+	Build the revision string from the given version and SCM information.
+	Will create 2 transient files in .mvn/:
+	- mavenConfig: receives the CLI parameters to overwrite the project revision
+	- versionProperties: contains version properties for later use
+	-->
+	<target name="buildRevision">
+		<property name="plainVersion" value="${majorVersion}.${minorVersion}.${incrementalVersion}" />
+		<echo>       Maven config: ${mavenConfig}</echo>
+		<echo> Version properties: ${versionProperties}</echo>
+		<echo>Revision properties: ${revisionProperties}</echo>
+		<echo>SCM Branch: ${scmBranch}</echo>
+		<echo>  SCM Tags: ${scmTags}</echo>
+		<echo>   - Major: ${majorVersion}</echo>
+		<echo>   - Minor: ${minorVersion}</echo>
+		<echo>   -  Incr: ${incrementalVersion}</echo>
+		<echo>     Plain: ${plainVersion}</echo>
+
+      <tstamp>
+         <format property="date.now" pattern="yyyyMMddHHmmss"  locale="de,DE"/>
+      </tstamp>
+		
+		
+		<!-- compose the revision from the given version, branch and tag -->
+		<script language="javascript" src="${basedir}/build-revision.js" />
+		<fail message="${revision.error}" if="revision.error" />
+
+		<echo>Target revision: ${revision.value}</echo>
+		<echo>Target  version: ${plainVersion}-${revision.value}</echo>
+
+		<!-- store version and tag information -->
+		<dirname file="${mavenConfig}" property="mavenConfigDir" />
+		<mkdir dir="${mavenConfigDir}" />
+		<echo file="${mavenConfig}">-Drevision=${revision.value}</echo>
+
+		<dirname file="${versionProperties}" property="versionPropertiesDir" />
+		<mkdir dir="${versionPropertiesDir}" />
+		<propertyfile file="${versionProperties}">
+			<!-- the release version used for artifact existence checks -->
+			<entry key="de.mindlab.releaseVersion" value="${plainVersion}-RELEASE" />
+		</propertyfile>
+
+		<dirname file="${revisionProperties}" property="revisionPropertiesDir" />
+		<mkdir dir="${revisionPropertiesDir}" />
+		<propertyfile file="${revisionProperties}">
+			<!-- the release version used for artifact existence checks -->
+			<entry key="DE_MINDLAB_REVISION" value="${revision.value}" />
+		</propertyfile>
+	</target>
+
+	<target name="cleanRevision">
+		<echo>       Maven config: ${mavenConfig}</echo>
+		<echo> Version properties: ${versionProperties}</echo>
+		<echo>Revision properties: ${revisionProperties}</echo>
+		<delete file="${mavenConfig}" />
+		<delete file="${versionProperties}" />
+		<delete file="${revisionProperties}" />
+	</target>
+</project>
